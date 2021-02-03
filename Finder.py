@@ -71,16 +71,21 @@ def CacheSearch(SearchKey: str):
     return links
 
 
-def Search(key: str):
-    cache = CacheSearch(key)
-    if cache != None:
-        return cache
+def Search(key: str, cache: bool):
+    if cache:
+        cachee = CacheSearch(key)
+        if cachee != None:
+            return cachee
+        else:
+            return None
     # ******************** resolving the search text ********************
     # top nominated sites
     url = "https://google.com/search?q="+"دانلود آهنگ "+key
 
     request = session.get(url)
     print(request.status_code)
+    if request.status_code == 429:
+        return Search(key, cache=False)
     GoogleResult = Regex.findall(Find_Sites_Regex, request.text)
 
     # ******************** crawling to links to finding songs ********************
@@ -92,7 +97,7 @@ def Search(key: str):
             # time.sleep(0.5)
             url_for_song, status_code = GetSongsUrl(session, site_url, 2)
             find_song = Regex.findall(Song_Regex, url_for_song)
-            leng = 5  # int(sys.argv[2])
+            leng = 10  # int(sys.argv[2])
             if len(find_song) < leng:
                 leng = len(find_song)
             for i in range(0, leng):
