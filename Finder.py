@@ -5,6 +5,13 @@ import time
 import os
 import sys
 import textdistance as tdis
+import random
+import string
+
+
+def RTG(length: int):
+    letters = string.ascii_letters
+    return ''.join(random.choice(letters) for i in range(length))
 
 
 def exit(status):
@@ -53,7 +60,7 @@ def GetSongsUrl(session, url, timeout):
         #trashcode [0]
 
 
-def CacheSearch(SearchKey: str):
+def CacheSearch(SearchKey: str, treshold: int):
     keys = SearchKey.replace(" ", "").lower()
     links = {}
     with open("Links.txt", mode="r") as file:
@@ -61,21 +68,21 @@ def CacheSearch(SearchKey: str):
     for item in items:
         result = item.split("[seprator]")
         #qr = Regex.findall(keys, result[0], flags=Regex.I + Regex.M)
-        qr = tdis.levenshtein(result[0].lower(), keys)
-        if qr < len(result[0])+len(keys)/5:
+        qr = tdis.levenshtein(result[1].lower(), keys)
+        if qr <= treshold:
             links[result[0]] = result[1]
     if len(links) == 0:
         return None
     return links
 
 
-def Search(key: str, cache: bool):
-    if cache:
-        cachee = CacheSearch(key)
-        if cachee != None:
-            return cachee
-        else:
-            return None
+def Search(key: str):
+    # if cache:
+    #    cachee = CacheSearch(key)
+    #    if cachee != None:
+    #        return cachee
+    #    else:
+    #        return None
     # ******************** resolving the search text ********************
     # top nominated sites
     url = "https://google.com/search?q="+"دانلود آهنگ "+key
@@ -83,7 +90,7 @@ def Search(key: str, cache: bool):
     request = session.get(url)
     print(request.status_code)
     if request.status_code == 429:
-        return Search(key, cache=False)
+        return Search(key)
     GoogleResult = Regex.findall(Find_Sites_Regex, request.text)
 
     # ******************** crawling to links to finding songs ********************
@@ -98,17 +105,23 @@ def Search(key: str, cache: bool):
             leng = 10  # int(sys.argv[2])
             if len(find_song) < leng:
                 leng = len(find_song)
+            lasturl = ""
             for i in range(0, leng):
                 song_url = RunExeptions(find_song[i])
                 if song_url != "":
-                    songNameDirty = Regex.findall(r'\/([a-zA-Z0-9-_% .]*)\.mp3', song_url)
-                    if len(songNameDirty) > 0:
-                        songName = Regex.sub(r'[0-9-_% .]+', ' ', songNameDirty[0])
-                        if songName[0] == " ":
-                            songName = songName[1:]
-                    else:
-                        songName = songNameDirty
-                    URL = Regex.sub(r' ', '%20', song_url)
-                    open("Links.txt", "a").write("{}[seprator]{}\n".format(songName, URL))
-                    links[songName] = URL
+                    if lasturl != song_url:
+                        lasturl = song_url
+                        songNameDirty = Regex.findall(r'\/([a-zA-Z0-9-_% .]*)\.mp3', song_url)
+                        if len(songNameDirty) > 0:
+                            songName = Regex.sub(r'[0-9-_% .]+', ' ', songNameDirty[0])
+                            if songName[0] == " ":
+                                songName = songName[1:]
+                            if songName[-1] == " ":
+                                songName = songName[:-1]
+                        else:
+                            songName = songNameDirty
+                        print(songName)
+                        URL = Regex.sub(r' ', '%20', song_url)
+                        open("Links.txt", "a").write("{}[seprator]{}[seprator]{}\n".format(RTG(10), songName, URL))
+                        links[songName] = URL
     return links

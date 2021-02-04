@@ -10,11 +10,10 @@ import time
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-""" start = time.time()
-result = Finder.Search("yavar hamishe momen")
-end = time.time()
-print("time taked: "+str(end-start))
-print(result) """
+downloadcommand = []
+
+# with open("Links.txt", mode="r") as file:
+#    items = file.readlines()
 
 # check if a string is ascii of not
 
@@ -28,24 +27,36 @@ def echo(update: Update, context: CallbackContext):
     if not is_ascii(key):
         update.message.reply_text("corrently we can't support this language, please try english.")
     else:
+        result = {}
         start = time.time()
-        result = Finder.Search(key, cache=True)
+        for i in range(0, 45, 3):
+            find = Finder.CacheSearch(key, i)
+            if find != None:
+                keys = list(find.keys())[0]
+                result[keys] = find[keys]
         end = time.time()
-        output = "search result: time taked({})".format(round(end-start, 2))
-        if result == None:
-            update.message.reply_text("""not found""")
-        else:
-            #keys = list(result.keys())[0]
-            for key in result:
-                output += "\n{}\n\n{}".format(key, result[key])
-                update.message.reply_text(output, parse_mode=ParseMode.HTML)
+        output = "search result ({} seconds)\n--------------------------------------------\n".format(round(end-start, 2))
+
+        #keys = list(result.keys())[0]
+        for i in range(len(result)-1, -1, -1):
+            key = list(result.keys())[i]
+            output += "\n{}: {}\ndownload: /dl_{}\n--------------------------------------------\n".format(
+                i+1, result[key], key)
+            downloadcommand.append(key)
+        print(downloadcommand)
+        update.message.reply_text(output, parse_mode=ParseMode.HTML)
+
+
+def download(update: Update, context: CallbackContext):
+    print(update.message.text)
 
 
 def main():
     updater = Updater("1620117997:AAFfJ3xbuU3KbEpqVPdXB4I_8TlhUg8w2tU", use_context=True)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
-
+    dispatcher.add_handler(CommandHandler(command="dl_", filters=Filters.caption_regex("dl_"),
+                                          callback=download, pass_args=True))
     updater.start_polling()
 
     updater.idle()
