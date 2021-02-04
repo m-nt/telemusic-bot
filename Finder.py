@@ -4,6 +4,7 @@ import re as Regex
 import time
 import os
 import sys
+import textdistance as tdis
 
 
 def exit(status):
@@ -53,21 +54,18 @@ def GetSongsUrl(session, url, timeout):
 
 
 def CacheSearch(SearchKey: str):
-    key = SearchKey.replace(" ", ".")
+    keys = SearchKey.replace(" ", "").lower()
     links = {}
     with open("Links.txt", mode="r") as file:
-        items = file.read()
-    qr = Regex.findall(key, items, flags=Regex.I + Regex.M)
-    if len(qr) <= 0:
+        items = file.readlines()
+    for item in items:
+        result = item.split("[seprator]")
+        #qr = Regex.findall(keys, result[0], flags=Regex.I + Regex.M)
+        qr = tdis.levenshtein(result[0].lower(), keys)
+        if qr < len(result[0])+len(keys)/5:
+            links[result[0]] = result[1]
+    if len(links) == 0:
         return None
-    else:
-        with open("Links.txt", mode="r") as file:
-            items = file.readlines()
-        for item in items:
-            qr = Regex.findall(key, item, flags=Regex.I + Regex.M)
-            if len(qr) > 0:
-                result = item.split("[seprator]")
-                links[result[0]] = result[1]
     return links
 
 
@@ -105,9 +103,12 @@ def Search(key: str, cache: bool):
                 if song_url != "":
                     songNameDirty = Regex.findall(r'\/([a-zA-Z0-9-_% .]*)\.mp3', song_url)
                     if len(songNameDirty) > 0:
-                        songName = Regex.sub(r'[0-9-_% .]+', '_', songNameDirty[0])
+                        songName = Regex.sub(r'[0-9-_% .]+', ' ', songNameDirty[0])
+                        if songName[0] == " ":
+                            songName = songName[1:]
                     else:
                         songName = songNameDirty
-                    open("Links.txt", "a").write("{}[seprator]{}\n".format(songName, song_url))
-                    links[songName] = song_url
+                    URL = Regex.sub(r' ', '%20', song_url)
+                    open("Links.txt", "a").write("{}[seprator]{}\n".format(songName, URL))
+                    links[songName] = URL
     return links

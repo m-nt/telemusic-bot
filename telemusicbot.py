@@ -35,9 +35,10 @@ def echo(update: Update, context: CallbackContext):
         if result == None:
             update.message.reply_text("""not found""")
         else:
-            keys = list(result.keys())[0]
-            output += "\n{}\n\n{}".format(keys, result[keys])
-            update.message.reply_text(output, parse_mode=ParseMode.HTML)
+            #keys = list(result.keys())[0]
+            for key in result:
+                output += "\n{}\n\n{}".format(key, result[key])
+                update.message.reply_text(output, parse_mode=ParseMode.HTML)
 
 
 def main():
