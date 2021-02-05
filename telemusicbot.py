@@ -2,20 +2,14 @@
 import requests as req
 import re
 from telegram import Update, ParseMode
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, Handler
 import logging
 import Finder
 import time
+import json
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-downloadcommand = []
-
-# with open("Links.txt", mode="r") as file:
-#    items = file.readlines()
-
-# check if a string is ascii of not
 
 
 def is_ascii(s):
@@ -40,23 +34,28 @@ def echo(update: Update, context: CallbackContext):
         #keys = list(result.keys())[0]
         for i in range(len(result)-1, -1, -1):
             key = list(result.keys())[i]
-            output += "\n{}: {}\ndownload: /dl_{}\n--------------------------------------------\n".format(
+            output += "\n{}: {}\ndownload: /{}\n--------------------------------------------\n".format(
                 i+1, result[key], key)
-            downloadcommand.append(key)
-        print(downloadcommand)
         update.message.reply_text(output, parse_mode=ParseMode.HTML)
 
 
 def download(update: Update, context: CallbackContext):
-    print(update.message.text)
+    hash = update.message.text.replace("/", "")
+    with open("Links.txt", mode="r") as file:
+        items = file.read()
+    link = re.findall('^{}.*'.format(hash), items, flags=re.M)[0].split('[seprator]')
+    update.message.reply_document(link[2].replace('\\n', ''))
+
+
+def updateed():
+    print("hey yo")
 
 
 def main():
     updater = Updater("1620117997:AAFfJ3xbuU3KbEpqVPdXB4I_8TlhUg8w2tU", use_context=True)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
-    dispatcher.add_handler(CommandHandler(command="dl_", filters=Filters.caption_regex("dl_"),
-                                          callback=download, pass_args=True))
+    dispatcher.add_handler(MessageHandler(Filters.command, download))
     updater.start_polling()
 
     updater.idle()
