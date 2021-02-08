@@ -3,6 +3,7 @@ import requests as req
 import re
 from telegram import Update, ParseMode
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, Handler
+from django_telegrambot.apps import DjangoTelegramBot
 import logging
 import Finder
 import time

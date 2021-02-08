@@ -2,3 +2,5 @@
 log.txt
 test.py
 mother.py
+Pipfile.lock
+config.json
